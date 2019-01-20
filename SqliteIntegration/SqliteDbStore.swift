@@ -27,6 +27,7 @@ class SqliteDbStore {
                 dbURL = try FileManager.default
                     .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
                     .appendingPathComponent("integration.db")
+                os_log("URL: %s", dbURL.absoluteString)
             } catch {
                 //TODO: Just logging the error and returning empty path URL here. Handle the error gracefully after logging
                 os_log("Some error occurred. Returning empty path.")
@@ -77,19 +78,57 @@ class SqliteDbStore {
         
     }
     
-    func prepareInsertStatements() throws {
-        if prepareInsertEventStmt() != SQLITE_OK {
-            throw SqliteError(message: "sqlite3_prepare insertEventStmt")
+    func insertRecord(record: Record) {
+        // ensure statements are created on first usage if nil
+        guard self.prepareinsertEntryStmt() == SQLITE_OK else { return }
+        
+        defer {
+            // reset the prepared statement on exit.
+            sqlite3_reset(self.insertEntryStmt)
+        }
+        
+        //  At some places (esp sqlite3_bind_xxx functions), we typecast String to NSString and then convert to char*,
+        // ex: (eventLog as NSString).utf8String. This is a weird bug in swift's sqlite3 bridging. this conversion resolves it.
+        
+        //Inserting name in insertEntryStmt prepared statement
+        if sqlite3_bind_text(self.insertEntryStmt, 1, (record.name as NSString).utf8String, -1, nil) != SQLITE_OK {
+            logDbErr("sqlite3_bind_text(insertEntryStmt)")
+            return
+        }
+        
+        //Inserting employeeID in insertEntryStmt prepared statement
+        if sqlite3_bind_text(self.insertEntryStmt, 2, (record.employeeId as NSString).utf8String, -1, nil) != SQLITE_OK {
+            logDbErr("sqlite3_bind_text(insertEntryStmt)")
+            return
+        }
+        
+        //Inserting designation in insertEntryStmt prepared statement
+        if sqlite3_bind_text(self.insertEntryStmt, 3, (record.designation as NSString).utf8String, -1, nil) != SQLITE_OK {
+            logDbErr("sqlite3_bind_text(insertEntryStmt)")
+            return
+        }
+        
+        //executing the query to insert values
+        let r = sqlite3_step(self.insertEntryStmt)
+        if r != SQLITE_DONE {
+            logDbErr("sqlite3_step(insertEntryStmt) \(r)")
+            return
         }
     }
     
-    func prepareInsertEventStmt() -> Int32 {
+    func prepareInsertStatements() throws {
+        if prepareinsertEntryStmt() != SQLITE_OK {
+            throw SqliteError(message: "sqlite3_prepare insertEntryStmt")
+        }
+    }
+    
+    func prepareinsertEntryStmt() -> Int32 {
         guard insertEntryStmt == nil else { return SQLITE_OK }
         let sql = "INSERT INTO Records (Name, EmployeeID, Designation) VALUES (?,?,?)"
         //preparing the query
         let r = sqlite3_prepare(db, sql, -1, &insertEntryStmt, nil)
         if  r != SQLITE_OK {
-            logDbErr("sqlite3_prepare insertEventStmt")
+            logDbErr("sqlite3_prepare insertEntryStmt")
         }
         return r
     }
