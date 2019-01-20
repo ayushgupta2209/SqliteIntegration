@@ -10,9 +10,9 @@ import Foundation
 
 class Record {
     // Name | Employee Id | Designation
-    let name: String
-    let employeeId: String
-    let designation: String
+    var name: String
+    var employeeId: String
+    var designation: String
     
     init(name: String, employeeId: String, designation: String) {
         self.name = name
