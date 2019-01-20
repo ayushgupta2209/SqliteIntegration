@@ -13,8 +13,12 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let sqliteDbStore = SqliteDbStore()
-        let record = Record(name: "Ayush", employeeId: "ABC123", designation: "SDE2")
-        sqliteDbStore.insertRecord(record: record)
+        var record = Record(name: "Ayush", employeeId: "ABC124", designation: "SDE")
+        sqliteDbStore.create(record: record)
+        //let r = try sqliteDbStore.read(employeeID: "ABC123")
+        record.designation = "SDE2"
+        sqliteDbStore.update(record: record)
+        sqliteDbStore.delete(employeeId: record.employeeId)
         // Do any additional setup after loading the view, typically from a nib.
     }
 
