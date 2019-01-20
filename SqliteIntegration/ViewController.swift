@@ -12,7 +12,9 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let _ = SqliteDbStore()
+        let sqliteDbStore = SqliteDbStore()
+        let record = Record(name: "Ayush", employeeId: "ABC123", designation: "SDE2")
+        sqliteDbStore.insertRecord(record: record)
         // Do any additional setup after loading the view, typically from a nib.
     }
 
